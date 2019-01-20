@@ -3,7 +3,17 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
+#include "model.h"
 #include "geometry.h"
+
+int envmap_width, envmap_height;
+std::vector<Vec3f> envmap;
+Model duck("../duck.obj");
 
 struct Light {
     Light(const Vec3f &p, const float &i) : position(p), intensity(i) {}
@@ -57,6 +67,8 @@ Vec3f refract(const Vec3f &I, const Vec3f &N, const float &refractive_index) { /
     float k = 1 - eta*eta*(1 - cosi*cosi);
     return k < 0 ? Vec3f(0,0,0) : I*eta + n*(eta * cosi - sqrtf(k));
 }
+
+
 
 bool scene_intersect(const Vec3f &orig, const Vec3f &dir, const std::vector<Sphere> &spheres, Vec3f &hit, Vec3f &N, Material &material) {
     float spheres_dist = std::numeric_limits<float>::max();
@@ -133,21 +145,33 @@ void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights
         }
     }
 
-    std::ofstream ofs; // save the framebuffer to file
-    ofs.open("./out.ppm");
-    ofs << "P6\n" << width << " " << height << "\n255\n";
+    std::vector<unsigned char> pixmap(width*height*3);
     for (size_t i = 0; i < height*width; ++i) {
         Vec3f &c = framebuffer[i];
         float max = std::max(c[0], std::max(c[1], c[2]));
         if (max>1) c = c*(1./max);
         for (size_t j = 0; j<3; j++) {
-            ofs << (char)(255 * std::max(0.f, std::min(1.f, framebuffer[i][j])));
+            pixmap[i*3+j] = (unsigned char)(255 * std::max(0.f, std::min(1.f, framebuffer[i][j])));
         }
     }
-    ofs.close();
+    stbi_write_jpg("out.jpg", width, height, 3, pixmap.data(), 100);
 }
 
 int main() {
+    int n = -1;
+    unsigned char *pixmap = stbi_load("../envmap.jpg", &envmap_width, &envmap_height, &n, 0);
+    if (!pixmap || 3!=n) {
+        std::cerr << "Error: can not load the environment map" << std::endl;
+        return -1;
+    }
+    envmap = std::vector<Vec3f>(envmap_width*envmap_height);
+    for (int j = envmap_height-1; j>=0 ; j--) {
+        for (int i = 0; i<envmap_width; i++) {
+            envmap[i+j*envmap_width] = Vec3f(pixmap[(i+j*envmap_width)*3+0], pixmap[(i+j*envmap_width)*3+1], pixmap[(i+j*envmap_width)*3+2])*(1/255.);
+        }
+    }
+    stbi_image_free(pixmap);
+
     Material      ivory(1.0, Vec4f(0.6,  0.3, 0.1, 0.0), Vec3f(0.4, 0.4, 0.3),   50.);
     Material      glass(1.5, Vec4f(0.0,  0.5, 0.1, 0.8), Vec3f(0.6, 0.7, 0.8),  125.);
     Material red_rubber(1.0, Vec4f(0.9,  0.1, 0.0, 0.0), Vec3f(0.3, 0.1, 0.1),   10.);
