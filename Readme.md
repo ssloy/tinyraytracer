@@ -8,14 +8,15 @@ If you are looking for a software rasterizer, check the [other part of the lectu
 In my lectures I tend to avoid third party libraries as long as it is reasonable, because it forces to understand what is happening under the hood. So, the raytracing 256 lines of plain C++ give us this result:  
 ![](https://raw.githubusercontent.com/ssloy/tinyraytracer/master/out.jpg)
 
-# compilation
+## compilation
+```sh
 git clone https://github.com/ssloy/tinyraytracer.git  
 cd tinyraytracer  
 mkdir build  
 cd build  
 cmake ..  
-make  
-
+make
+```
 # Homework assignment
 [homework_assignment branch](https://github.com/ssloy/tinyraytracer/tree/homework_assignment) contains all necessary stuff to easily add environment maps:
 ![](https://raw.githubusercontent.com/ssloy/tinyraytracer/homework_assignment/out-envmap.jpg)
