@@ -1,0 +1,12 @@
+image:
+  file: Dockerfile
+tasks:
+- command: >
+    mkdir --parents build &&
+    cd build &&
+    cmake .. &&
+    make &&
+    ./tinyraytracer &&
+    pnmtopng out.ppm > out.png &&
+    open out.png &&
+    cd ..
