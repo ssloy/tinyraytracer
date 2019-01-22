@@ -3,6 +3,9 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <algorithm>
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include "geometry.h"
 
 struct Light {
@@ -134,7 +137,7 @@ void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights
     }
 
     std::ofstream ofs; // save the framebuffer to file
-    ofs.open("./out.ppm");
+    ofs.open("./out.ppm",std::ios::binary);
     ofs << "P6\n" << width << " " << height << "\n255\n";
     for (size_t i = 0; i < height*width; ++i) {
         Vec3f &c = framebuffer[i];
