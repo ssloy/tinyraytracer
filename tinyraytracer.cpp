@@ -127,9 +127,9 @@ void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights
     #pragma omp parallel for
     for (size_t j = 0; j<height; j++) {
         for (size_t i = 0; i<width; i++) {
-            float x =  (2*(i + 0.5)/(float)width  - 1)*tan(fov/2.)*width/(float)height;
-            float y = -(2*(j + 0.5)/(float)height - 1)*tan(fov/2.);
-            Vec3f dir = Vec3f(x, y, -1).normalize();
+            float x =  (i + 0.5) -  width/2.;
+            float y = -(j + 0.5) + height/2.; // flips the image at the same time
+            Vec3f dir = Vec3f(x, y, -height/(2.*tan(fov/2.))).normalize();
             framebuffer[i+j*width] = cast_ray(Vec3f(0,0,0), dir, spheres, lights);
         }
     }
@@ -169,3 +169,4 @@ int main() {
 
     return 0;
 }
+
