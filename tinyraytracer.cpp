@@ -119,9 +119,9 @@ Vec3f cast_ray(const Vec3f &orig, const Vec3f &dir, const std::vector<Sphere> &s
 }
 
 void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights) {
-    const int width    = 1024;
-    const int height   = 768;
-    const int fov      = M_PI/2.;
+    const int   width    = 1024;
+    const int   height   = 768;
+    const float fov      = M_PI/3.;
     std::vector<Vec3f> framebuffer(width*height);
 
     #pragma omp parallel for
