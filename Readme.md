@@ -32,4 +32,4 @@ Just change the code in the editor and rerun the script (use the terminal's hist
 ... and triangulated meshes:
 ![](https://raw.githubusercontent.com/ssloy/tinyraytracer/homework_assignment/out-envmap-duck.jpg)
 
-All boring code (image/obj files serializer etc) is already added; to obtain the above image ot suffices to add 10-20 lines of code.
+All boring code (image/obj files serializer etc) is already added; to obtain the above image it suffices to add 10-20 lines of code.
