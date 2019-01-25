@@ -1,8 +1,11 @@
-#include <limits>
+#define _USE_MATH_DEFINES
 #include <cmath>
+#include <limits>
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <algorithm>
+
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 #define STB_IMAGE_IMPLEMENTATION
@@ -16,13 +19,13 @@ std::vector<Vec3f> envmap;
 Model duck("../duck.obj");
 
 struct Light {
-    Light(const Vec3f &p, const float &i) : position(p), intensity(i) {}
+    Light(const Vec3f &p, const float i) : position(p), intensity(i) {}
     Vec3f position;
     float intensity;
 };
 
 struct Material {
-    Material(const float &r, const Vec4f &a, const Vec3f &color, const float &spec) : refractive_index(r), albedo(a), diffuse_color(color), specular_exponent(spec) {}
+    Material(const float r, const Vec4f &a, const Vec3f &color, const float spec) : refractive_index(r), albedo(a), diffuse_color(color), specular_exponent(spec) {}
     Material() : refractive_index(1), albedo(1,0,0,0), diffuse_color(), specular_exponent() {}
     float refractive_index;
     Vec4f albedo;
@@ -35,7 +38,7 @@ struct Sphere {
     float radius;
     Material material;
 
-    Sphere(const Vec3f &c, const float &r, const Material &m) : center(c), radius(r), material(m) {}
+    Sphere(const Vec3f &c, const float r, const Material &m) : center(c), radius(r), material(m) {}
 
     bool ray_intersect(const Vec3f &orig, const Vec3f &dir, float &t0) const {
         Vec3f L = center - orig;
@@ -55,20 +58,13 @@ Vec3f reflect(const Vec3f &I, const Vec3f &N) {
     return I - N*2.f*(I*N);
 }
 
-Vec3f refract(const Vec3f &I, const Vec3f &N, const float &refractive_index) { // Snell's law
+Vec3f refract(const Vec3f &I, const Vec3f &N, const float eta_t, const float eta_i=1.f) { // Snell's law
     float cosi = - std::max(-1.f, std::min(1.f, I*N));
-    float etai = 1, etat = refractive_index;
-    Vec3f n = N;
-    if (cosi < 0) { // if the ray is inside the object, swap the indices and invert the normal to get the correct result
-        cosi = -cosi;
-        std::swap(etai, etat); n = -N;
-    }
-    float eta = etai / etat;
+    if (cosi<0) return refract(I, -N, eta_i, eta_t); // if the ray comes from the inside the object, swap the air and the media
+    float eta = eta_i / eta_t;
     float k = 1 - eta*eta*(1 - cosi*cosi);
-    return k < 0 ? Vec3f(0,0,0) : I*eta + n*(eta * cosi - sqrtf(k));
+    return k<0 ? Vec3f(1,0,0) : I*eta + N*(eta*cosi - sqrtf(k)); // k<0 = total reflection, no ray to refract. I refract it anyways, this has no physical meaning
 }
-
-
 
 bool scene_intersect(const Vec3f &orig, const Vec3f &dir, const std::vector<Sphere> &spheres, Vec3f &hit, Vec3f &N, Material &material) {
     float spheres_dist = std::numeric_limits<float>::max();
@@ -90,8 +86,7 @@ bool scene_intersect(const Vec3f &orig, const Vec3f &dir, const std::vector<Sphe
             checkerboard_dist = d;
             hit = pt;
             N = Vec3f(0,1,0);
-            material.diffuse_color = (int(.5*hit.x+1000) + int(.5*hit.z)) & 1 ? Vec3f(1,1,1) : Vec3f(1, .7, .3);
-            material.diffuse_color = material.diffuse_color*.3;
+            material.diffuse_color = (int(.5*hit.x+1000) + int(.5*hit.z)) & 1 ? Vec3f(.3, .3, .3) : Vec3f(.3, .2, .1);
         }
     }
     return std::min(spheres_dist, checkerboard_dist)<1000;
@@ -130,18 +125,18 @@ Vec3f cast_ray(const Vec3f &orig, const Vec3f &dir, const std::vector<Sphere> &s
 }
 
 void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights) {
-    const int width    = 1024;
-    const int height   = 768;
-    const int fov      = M_PI/2.;
+    const int   width    = 1024;
+    const int   height   = 768;
+    const float fov      = M_PI/3.;
     std::vector<Vec3f> framebuffer(width*height);
 
     #pragma omp parallel for
-    for (size_t j = 0; j<height; j++) {
+    for (size_t j = 0; j<height; j++) { // actual rendering loop
         for (size_t i = 0; i<width; i++) {
-            float x =  (2*(i + 0.5)/(float)width  - 1)*tan(fov/2.)*width/(float)height;
-            float y = -(2*(j + 0.5)/(float)height - 1)*tan(fov/2.);
-            Vec3f dir = Vec3f(x, y, -1).normalize();
-            framebuffer[i+j*width] = cast_ray(Vec3f(0,0,0), dir, spheres, lights);
+            float dir_x =  (i + 0.5) -  width/2.;
+            float dir_y = -(j + 0.5) + height/2.;    // this flips the image at the same time
+            float dir_z = -height/(2.*tan(fov/2.));
+            framebuffer[i+j*width] = cast_ray(Vec3f(0,0,0), Vec3f(dir_x, dir_y, dir_z).normalize(), spheres, lights);
         }
     }
 
