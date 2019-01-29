@@ -14,7 +14,7 @@ All the boring code (image/obj files serializer etc) is already there; to obtain
 git clone --recurse-submodules https://github.com/ssloy/tinyraytracer.git
 cd tinyraytracer
 git checkout homework_assignment
-git submodule update
+git submodule update --init
 mkdir build
 cd build
 cmake ..  
