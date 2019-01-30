@@ -10,4 +10,4 @@ script: >
   make &&
   ./tinyraytracer &&
   pnmtopng out.ppm > out.png &&
-  open out.png &&
+  open out.png
