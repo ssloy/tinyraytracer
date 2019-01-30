@@ -3,11 +3,13 @@ notifications:
 dist: trusty
 os:
   - linux
+before_install:
+  - sudo apt-get install -y pnmtopng jp2a imagemagick
 script: >
   mkdir --parents build &&
   cd build &&
   cmake .. &&
   make &&
   ./tinyraytracer &&
-  pnmtopng out.ppm > out.png &&
-  open out.png
+  convert out.ppm out.jpg &&
+  jp2a --width=76 out.jpg
