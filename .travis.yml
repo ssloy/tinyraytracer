@@ -12,4 +12,4 @@ script: >
   make &&
   ./tinyraytracer &&
   convert out.ppm out.jpg &&
-  jp2a --width=76 out.jpg
+  jp2a --width=132 out.jpg
