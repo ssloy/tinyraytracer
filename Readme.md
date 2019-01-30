@@ -28,10 +28,11 @@ Just change the code in the editor and rerun the script (use the terminal's hist
 [homework_assignment branch](https://github.com/ssloy/tinyraytracer/tree/homework_assignment) contains all necessary stuff to easily add environment maps:
 ![](https://raw.githubusercontent.com/ssloy/tinyraytracer/homework_assignment/out-envmap.jpg)
 
-... and triangulated meshes:
+Anaglyph pairs are extremely simple to do!
+![](https://raw.githubusercontent.com/ssloy/tinyraytracer/master/anaglyph.jpg)
+
+
+Add triangulated meshes:
 ![](https://raw.githubusercontent.com/ssloy/tinyraytracer/homework_assignment/out-envmap-duck.jpg)
 
 All boring code (image/obj files serializer etc) is already added; to obtain the above image it suffices to add 10-20 lines of code.
-
-Anaglyph pairs are extremely simple to do!
-![](https://raw.githubusercontent.com/ssloy/tinyraytracer/master/anaglyph.jpg)
