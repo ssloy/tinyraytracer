@@ -1,0 +1,13 @@
+notifications:
+  email: false
+dist: trusty
+os:
+  - linux
+script: >
+  mkdir --parents build &&
+  cd build &&
+  cmake .. &&
+  make &&
+  ./tinyraytracer &&
+  pnmtopng out.ppm > out.png &&
+  open out.png &&
