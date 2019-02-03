@@ -68,6 +68,20 @@ void compute_depthmap(const size_t width, const size_t height, const float fov, 
         zbuffer[i] = 1-(std::min(zbuffer[i],far)-minval)/(maxval-minval);
 }
 
+int parallax(const float z) {
+    const float eye_separation = 400.; // interpupillary distance in pixels
+    const float mu = .33;              // if the far plane is a distance D behind the screen, then the near plane is a distance mu*D in front of the far plane
+    return static_cast<int>(eye_separation*((1.-z*mu)/(2.-z*mu))+.5);
+}
+
+size_t uf_find(std::vector<size_t> &same, size_t x) {
+    return same[x]==x ? x : uf_find(same, same[x]);
+}
+
+void uf_union(std::vector<size_t> &same, size_t x, size_t y) {
+    if ((x=uf_find(same, x)) != (y=uf_find(same, y))) same[x] = y;
+}
+
 int main() {
     std::vector<Sphere> spheres = { {{-3,0,-16}, 2}, {{-1,-1.5,-12}, 2}, {{1.5,-.5,-18}, 3}, {{7,5,-18}, 4} };
     const size_t width  = 1024;
@@ -79,9 +93,27 @@ int main() {
     std::vector<unsigned char> framebuffer(width*height*3);
     for (size_t j=0; j<height; j++) { // generate a random-ish image
         for (size_t i=0; i<width; i++) {
-            framebuffer[(i+j*width)*3 + 0] = (rand()%256)*(sin(i*2*M_PI/200)+1)/2; // the sine generates vertical strips to ease focusing
+            framebuffer[(i+j*width)*3 + 0] = (rand()%256)*(sin(i*2*M_PI/parallax(0))+1)/2; // the sine generates vertical strips to ease focusing
             framebuffer[(i+j*width)*3 + 1] = (rand()%256);
             framebuffer[(i+j*width)*3 + 2] = (rand()%256);
+        }
+    }
+
+    for (size_t j=0; j<height; j++) { // autostereogram rendering loop
+        std::vector<size_t> same(width);
+        std::iota(same.begin(), same.end(), 0); // initialize the union-find data structure (same[i]=i)
+
+        for (size_t i=0; i<width; i++) { // put the constraints
+            int par = parallax(zbuffer[i+j*width]);
+            int left  = i - par/2;
+            int right = left + par; // works better than i+par/2 for odd values of par
+            if (left>=0 && right<(int)width)
+                uf_union(same, left, right); // left and right pixels will have the same color
+        }
+        for (size_t i=0; i<width; i++) { // resolve the constraints
+            size_t root = uf_find(same, i);
+            for (size_t c=0; c<3; c++)
+                framebuffer[(i+j*width)*3+c] = framebuffer[(root+j*width)*3+c];
         }
     }
 
