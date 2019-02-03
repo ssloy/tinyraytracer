@@ -144,7 +144,7 @@ void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights
         }
     }
 
-    std::vector<unsigned char> pixmap((width-delta)*height*3);
+    std::vector<unsigned char> pixmap((width-delta)*height*3*2);
     for (size_t j = 0; j<height; j++) {
         for (size_t i = 0; i<width-delta; i++) {
             Vec3f c1 = framebuffer1[i+delta+j*width];
@@ -154,15 +154,14 @@ void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights
             if (max1>1) c1 = c1*(1./max1);
             float max2 = std::max(c2[0], std::max(c2[1], c2[2]));
             if (max2>1) c2 = c2*(1./max2);
-            float avg1 = (c1.x+c1.y+c1.z)/3.;
-            float avg2 = (c2.x+c2.y+c2.z)/3.;
 
-            pixmap[(j*(width-delta) + i)*3  ] = 255*avg1;
-            pixmap[(j*(width-delta) + i)*3+1] = 0;
-            pixmap[(j*(width-delta) + i)*3+2] = 255*avg2;
+            for (size_t d=0; d<3; d++) {
+                pixmap[(j*(width-delta)*2 + i            )*3+d] = 255*c1[d];
+                pixmap[(j*(width-delta)*2 + i+width-delta)*3+d] = 255*c2[d];
+            }
         }
     }
-    stbi_write_jpg("out.jpg", width-delta, height, 3, pixmap.data(), 100);
+    stbi_write_jpg("out.jpg", (width-delta)*2, height, 3, pixmap.data(), 100);
 }
 
 int main() {
