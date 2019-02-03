@@ -77,11 +77,11 @@ int main() {
     compute_depthmap(width, height, fov, 23.f, spheres, zbuffer);
 
     std::vector<unsigned char> framebuffer(width*height*3);
-    for (size_t j=0; j<height; j++) {
+    for (size_t j=0; j<height; j++) { // generate a random-ish image
         for (size_t i=0; i<width; i++) {
-            for (size_t d=0; d<3; d++) {
-                framebuffer[(i+j*width)*3 + d] = 255*zbuffer[i+j*width];
-            }
+            framebuffer[(i+j*width)*3 + 0] = (rand()%256)*(sin(i*2*M_PI/200)+1)/2; // the sine generates vertical strips to ease focusing
+            framebuffer[(i+j*width)*3 + 1] = (rand()%256);
+            framebuffer[(i+j*width)*3 + 2] = (rand()%256);
         }
     }
 
