@@ -6,7 +6,7 @@ tasks:
     cd build &&
     cmake .. &&
     make &&
-    ./tinyraycaster &&
+    ./tinyraytracer &&
     pnmtopng out.ppm > out.png &&
     open out.png &&
     cd ..
