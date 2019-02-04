@@ -127,8 +127,8 @@ Vec3f cast_ray(const Vec3f &orig, const Vec3f &dir, const std::vector<Sphere> &s
 void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights) {
     const float eyesep   = 0.2;
     const int   delta    = 60; // focal distance 3
-    const int   width    = 1024+delta;
-    const int   height   = 768;
+    const int   width    = 960+delta;
+    const int   height   = 1080;
     const float fov      = M_PI/3.;
     std::vector<Vec3f> framebuffer1(width*height);
     std::vector<Vec3f> framebuffer2(width*height);
@@ -144,16 +144,48 @@ void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights
         }
     }
 
+    if (0) { // draw the white grid
+        for (size_t j = 0; j<height; j++) {
+            for (size_t i = 0; i<width; i+=width/10) {
+                framebuffer2[i+j*width] = Vec3f(1,1,1);
+                framebuffer1[i+j*width] = Vec3f(1,1,1);
+            }
+        }
+        for (size_t i = 0; i<width; i++) {
+            for (size_t j = 0; j<height; j+=height/10) {
+                framebuffer2[i+j*width] = Vec3f(1,1,1);
+                framebuffer1[i+j*width] = Vec3f(1,1,1);
+            }
+        }
+    }
+
+    const float k1 = 0.12;
+    const float k2 = 0.10;
+
+    const float xc = (width-delta)/2.;
+    const float yc = height/2.;
+    const float R = std::min(width-delta, height)/2.f;
+
     std::vector<unsigned char> pixmap((width-delta)*height*3*2);
     for (size_t j = 0; j<height; j++) {
         for (size_t i = 0; i<width-delta; i++) {
-            Vec3f c1 = framebuffer1[i+delta+j*width];
-            Vec3f c2 = framebuffer2[i+      j*width];
+            float xd = i;
+            float yd = j;
+            float r = std::sqrt(pow(xd-xc, 2) + pow(yd-yc, 2))/R;
 
-            float max1 = std::max(c1[0], std::max(c1[1], c1[2]));
-            if (max1>1) c1 = c1*(1./max1);
+            int xu = xc+(xd-xc)*(1+k1*pow(r,2)+k2*pow(r,4));
+            int yu = yc+(yd-yc)*(1+k1*pow(r,2)+k2*pow(r,4));
+
+            Vec3f c1 (0,0,0), c2(0,0,0);
+            if (xu>=0 && xu<width-delta && yu>=0 && yu<height) {
+                c1 = framebuffer2[xu+yu*width+delta];
+                c2 = framebuffer2[xu+yu*width];
+            }
+
             float max2 = std::max(c2[0], std::max(c2[1], c2[2]));
             if (max2>1) c2 = c2*(1./max2);
+            float max1 = std::max(c1[0], std::max(c1[1], c1[2]));
+            if (max1>1) c1 = c1*(1./max1);
 
             for (size_t d=0; d<3; d++) {
                 pixmap[(j*(width-delta)*2 + i            )*3+d] = 255*c1[d];
