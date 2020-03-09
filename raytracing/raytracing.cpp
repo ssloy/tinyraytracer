@@ -5,6 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <future>
 
 //TODO : description
 /// reflect
@@ -124,16 +125,30 @@ namespace entities{
 void render(const std::vector<entities::Sphere> &spheres, const std::vector<entities::Light> &lights) {
     const int   width    = 1920;
     const int   height   = 1080;
-    const float fov      = M_PI/3.; ///that's a viewing angle
+    const float fov      = M_PI/3.; ///that's a viewing angle = pi/3
     std::vector<Vec3f> framebuffer(width*height);
+    const auto amount_of_threads = std::thread::hardware_concurrency();
+    std::vector<std::future<void>> tasks(amount_of_threads);
 
-#pragma omp parallel for
+    size_t portion = width / amount_of_threads;
     for (size_t j = 0; j<height; j++) { // actual rendering loop
-        for (size_t i = 0; i<width; i++) {
-            float dir_x =  (i + 0.5) -  width/2.;
-            float dir_y = -(j + 0.5) + height/2.;    // this flips the image at the same time
-            float dir_z = -height/(2.*tan(fov/2.));
-            framebuffer[i+j*width] = cast_ray(Vec3f(0,0,0), Vec3f(dir_x, dir_y, dir_z).normalize(), spheres, lights);
+        //trying to parallel compute pieces of "line" of a picture
+        for (size_t start = 0, finish = portion, index = 0;
+        index < amount_of_threads; ++index, start=finish,
+        finish = index == amount_of_threads - 1 ? width : finish + portion){
+            tasks[index] = std::async(std::launch::async, [=, &spheres, &lights, &framebuffer](){
+                for (size_t i = start; i < finish; i++) {
+                    auto dir_x = (i + 0.5) - width / 2.;
+                    auto dir_y = -(j + 0.5) + height / 2.;    // this flips the image at the same time
+                    auto dir_z = -height / (2. * tan(fov / 2.));
+                    framebuffer[i + j * width] = cast_ray(Vec3f(0, 0, 0), Vec3f(dir_x, dir_y, dir_z).normalize(),
+                                                          spheres, lights);
+                }
+            });
+        }
+        /// waiting our parallel tasks
+        for (auto&& task : tasks){
+            task.get();
         }
     }
 
