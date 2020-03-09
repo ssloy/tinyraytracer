@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.8)
-project (tinyraytracer)
+project (raytracer)
 
 include(CheckCXXCompilerFlag)
 
@@ -23,5 +23,5 @@ enable_cxx_compiler_flag_if_supported("-fopenmp")
 
 file(GLOB SOURCES *.h *.cpp)
 
-add_executable(${PROJECT_NAME} ${SOURCES})
+add_executable(${PROJECT_NAME} ${SOURCES} raytracing/raytracing.cpp)
 
