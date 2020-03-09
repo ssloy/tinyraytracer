@@ -125,6 +125,7 @@ namespace entities{
 void render(const std::vector<entities::Sphere> &spheres, const std::vector<entities::Light> &lights) {
     const int   width    = 1920;
     const int   height   = 1080;
+    std::cout << "Halp me!" << std::endl;
     const float fov      = M_PI/3.; ///that's a viewing angle = pi/3
     std::vector<Vec3f> framebuffer(width*height);
     const auto amount_of_threads = std::thread::hardware_concurrency();
