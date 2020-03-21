@@ -53,7 +53,27 @@ bool box_ray_intersect(in Box box, in Ray ray, out vec3 point, out vec3 normal) 
     return false;
 }
 
-bool bunny_ray_intersect(in Ray ray, out vec3 point, out vec3 normal) {
+vec3 hs2rgb(vec2 c) {
+    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+    return mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+
+vec3 colorFromIndex(float index) {
+    return hs2rgb(vec2(fract((index * 12.0)), index));
+}
+
+// A single iteration of Bob Jenkins' One-At-A-Time hashing algorithm.
+uint hash( uint x ) {
+    x += ( x << 10u );
+    x ^= ( x >>  6u );
+    x += ( x <<  3u );
+    x ^= ( x >> 11u );
+    x += ( x << 15u );
+    return x;
+}
+
+bool bunny_ray_intersect(in Ray ray, out vec3 point, out vec3 normal, out vec3 color) {
     float bunny_dist = 1e10;
     for (int i=0; i<BUNW; i++) {
         for (int j=0; j<BUNH; j++) {
@@ -66,6 +86,7 @@ bool bunny_ray_intersect(in Ray ray, out vec3 point, out vec3 normal) {
                     bunny_dist = length(p-ray.origin);
                     point = p;
                     normal = n;
+                    color = colorFromIndex(float(int(hash(uint(cellID)))%144)/144.);
                 }
             }
         }
@@ -73,17 +94,27 @@ bool bunny_ray_intersect(in Ray ray, out vec3 point, out vec3 normal) {
     return bunny_dist < 1e3;
 }
 
+vec3 shiftOrig(in vec3 source, in vec3 point, in vec3 normal) {
+    return dot(source, normal) < 0. ? point - normal*1e-3 : point + normal*1e-3;
+}
+
 vec3 cast_ray(in Ray ray) {
-    vec3 p, n;
-    if (!bunny_ray_intersect(ray, p, n))
+    vec3 p, n, c;
+    if (!bunny_ray_intersect(ray, p, n, c))
         return texture(iChannel0, ray.dir).xyz;
 
     vec3 diffuse_light = vec3(0.);
     for (int i=0; i<lights.length(); i++) {
         vec3 light_dir = normalize(lights[i].position - p);
+        vec3 shadow_orig = shiftOrig(light_dir, p, n);
+        vec3 shadp, shadn, shadc;
+        if (bunny_ray_intersect(Ray(shadow_orig, light_dir), shadp, shadn, shadc)) {
+            continue;
+        }
         diffuse_light  += lights[i].color * max(0., dot(light_dir, n));
     }
-    return vec3(0.2, 0.7, 0.8)*(vec3(.7,.7,.7) + diffuse_light);
+
+    return c*(vec3(.7,.7,.7) + diffuse_light);
 }
 
 vec3 rotateCamera(in vec3 orig, in vec3 dir, in vec3 target) {
@@ -108,9 +139,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
     if(m>1.) col = col / m;
 
     vec2 coord = fragCoord/iResolution.xy*vec2(JFIGW, JFIGH);
-    if (jfig(uint(coord.x), uint(coord.y))) {
+    if (jfig(uint(coord.x), uint(coord.y)))
         col += vec3(.5);
-    }
-
-    fragColor = vec4(col, 1.);
+    fragColor = vec4(col,1.0);
 }
