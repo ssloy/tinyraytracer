@@ -17,9 +17,16 @@ struct Box {
     vec3 halfsize;
 };
 
+struct Light {
+    vec3 position;
+    vec3 color;
+};
+
+Light[] lights = Light[]( Light(vec3(-15,10,10), vec3(1,1,1)) );
+
 bool box_ray_intersect(in Box box, in Ray ray, out vec3 point, out vec3 normal) {
     for (int d=0; d<3; d++) {
-        if (abs(ray.dir[d])<1e-5) continue; 
+        if (abs(ray.dir[d])<1e-5) continue;
         float side = (ray.dir[d] > 0. ? -1.0 : 1.0);
         float dist = (box.center[d] + side*box.halfsize[d] - ray.origin[d]) / ray.dir[d];
         if (dist < 0.) continue;
@@ -39,7 +46,12 @@ bool box_ray_intersect(in Box box, in Ray ray, out vec3 point, out vec3 normal) 
 vec3 cast_ray(in Ray ray) {
     vec3 p, n;
     if (box_ray_intersect(Box(vec3(0.), vec3(.25)), ray, p, n)) {
-        return vec3(0.2, 0.7, 0.8);
+        vec3 diffuse_light = vec3(0.);
+        for (int i=0; i<lights.length(); i++) {
+            vec3 light_dir = normalize(lights[i].position - p);
+            diffuse_light  += lights[i].color * max(0., dot(light_dir, n));
+        }
+        return vec3(0.2, 0.7, 0.8)*(vec3(.7,.7,.7) + diffuse_light);
     }
     return texture(iChannel0, ray.dir).xyz;
 }
@@ -62,6 +74,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
     dir = rotateCamera(orig, dir, vec3(0.));
 
     vec3 col = cast_ray(Ray(orig, dir));
+    float m = max(col.x, max(col.y, col.z));
+    if(m>1.) col = col / m;
 
     vec2 coord = fragCoord/iResolution.xy*vec2(JFIGW, JFIGH);
     if (jfig(uint(coord.x), uint(coord.y))) {
