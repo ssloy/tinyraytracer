@@ -8,12 +8,20 @@ bool jfig(in uint x, in uint y) {
 }
 
 struct Ray {
- vec3 origin;
+    vec3 origin;
     vec3 dir;
 };
 
 vec3 cast_ray(in Ray ray) {
- return texture(iChannel0, ray.dir).xyz;
+    return texture(iChannel0, ray.dir).xyz;
+}
+
+vec3 rotateCamera(in vec3 orig, in vec3 dir, in vec3 target) {
+    vec3 zAxis = normalize(orig - target);
+    vec3 xAxis = normalize(cross(vec3(0., 1., 0.), zAxis));
+    vec3 yAxis = normalize(cross(zAxis, xAxis));
+    mat4 transform = mat4(vec4(xAxis, 0.), vec4(yAxis, 0.), vec4(zAxis, 0.), vec4(orig, 1.));
+    return (transform * vec4(dir, 0.)).xyz;
 }
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
@@ -21,8 +29,9 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
     vec2 uv = (fragCoord/iResolution.xy*2. - 1.)*tan(fov/2.);
     uv.x *= iResolution.x/iResolution.y;
 
-    vec3 orig = vec3(0., 0., 1.);
+    vec3 orig = vec3(-sin(iTime/4.), 0., cos(iTime/4.));
     vec3 dir = normalize(vec3(uv, -1));
+    dir = rotateCamera(orig, dir, vec3(0.));
 
     vec3 col = cast_ray(Ray(orig, dir));
 
