@@ -12,18 +12,35 @@ struct Ray {
     vec3 dir;
 };
 
-vec3 cast_ray(in Ray ray) {
-    if (abs(ray.dir.z)>1e-5) {
-        float dist = (0. - ray.origin.z) / ray.dir.z;
-        if (dist > 0.) {
-            vec3 point = ray.origin + ray.dir*dist;
-            if (point.x>-.25 && point.x<.25 &&
-                    point.y>-.25 && point.y<.25) {
-                return vec3(0.2, 0.7, 0.8);
-            }
+struct Box {
+    vec3 center;
+    vec3 halfsize;
+};
+
+bool box_ray_intersect(in Box box, in Ray ray, out vec3 point, out vec3 normal) {
+    for (int d=0; d<3; d++) {
+        if (abs(ray.dir[d])<1e-5) continue; 
+        float side = (ray.dir[d] > 0. ? -1.0 : 1.0);
+        float dist = (box.center[d] + side*box.halfsize[d] - ray.origin[d]) / ray.dir[d];
+        if (dist < 0.) continue;
+        point = ray.origin + ray.dir*dist;
+        int i1 = (d+1)%3;
+        int i2 = (d+2)%3;
+        if (point[i1]>box.center[i1]-box.halfsize[i1] && point[i1]<box.center[i1]+box.halfsize[i1] &&
+            point[i2]>box.center[i2]-box.halfsize[i2] && point[i2]<box.center[i2]+box.halfsize[i2]) {
+            normal = vec3(0);
+            normal[d] = side;
+            return true;
         }
     }
+    return false;
+}
 
+vec3 cast_ray(in Ray ray) {
+    vec3 p, n;
+    if (box_ray_intersect(Box(vec3(0.), vec3(.25)), ray, p, n)) {
+        return vec3(0.2, 0.7, 0.8);
+    }
     return texture(iChannel0, ray.dir).xyz;
 }
 
