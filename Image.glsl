@@ -13,6 +13,17 @@ struct Ray {
 };
 
 vec3 cast_ray(in Ray ray) {
+    if (abs(ray.dir.z)>1e-5) {
+        float dist = (0. - ray.origin.z) / ray.dir.z;
+        if (dist > 0.) {
+            vec3 point = ray.origin + ray.dir*dist;
+            if (point.x>-.25 && point.x<.25 &&
+                    point.y>-.25 && point.y<.25) {
+                return vec3(0.2, 0.7, 0.8);
+            }
+        }
+    }
+
     return texture(iChannel0, ray.dir).xyz;
 }
 
