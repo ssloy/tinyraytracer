@@ -7,15 +7,29 @@ bool jfig(in uint x, in uint y) {
     return 0u != (jfig_bitfield[id/32u] & (1u << (id&31u)));
 }
 
+struct Ray {
+ vec3 origin;
+    vec3 dir;
+};
+
+vec3 cast_ray(in Ray ray) {
+ return texture(iChannel0, ray.dir).xyz;
+}
+
 void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
-    vec2 uv = fragCoord/iResolution.xy;
-    vec3 col = vec3(uv.x, uv.y, 0.);
-    
+    const float fov = 3.1416 / 4.;
+    vec2 uv = (fragCoord/iResolution.xy*2. - 1.)*tan(fov/2.);
+    uv.x *= iResolution.x/iResolution.y;
+
+    vec3 orig = vec3(0., 0., 1.);
+    vec3 dir = normalize(vec3(uv, -1));
+
+    vec3 col = cast_ray(Ray(orig, dir));
 
     vec2 coord = fragCoord/iResolution.xy*vec2(JFIGW, JFIGH);
     if (jfig(uint(coord.x), uint(coord.y))) {
         col += vec3(.5);
     }
-    
+
     fragColor = vec4(col, 1.);
 }
