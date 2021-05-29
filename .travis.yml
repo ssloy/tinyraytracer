@@ -1,0 +1,15 @@
+notifications:
+  email: false
+dist: trusty
+os:
+  - linux
+before_install:
+  - sudo apt-get install -y jp2a imagemagick
+script: >
+  mkdir --parents build &&
+  cd build &&
+  cmake .. &&
+  make &&
+  ./tinyraytracer &&
+  convert out.ppm out.jpg &&
+  jp2a --width=132 out.jpg
