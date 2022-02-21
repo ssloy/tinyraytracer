@@ -2,7 +2,25 @@
 #include <fstream>
 #include <vector>
 #include <algorithm>
-#include "geometry.h"
+#include <cassert>
+#include <cmath>
+
+struct vec3 {
+    float x=0, y=0, z=0;
+          float& operator[](const size_t i)       { assert(i<3); return i==0 ? x : (1==i ? y : z); }
+    const float& operator[](const size_t i) const { assert(i<3); return i==0 ? x : (1==i ? y : z); }
+    vec3  operator*(const float v) const { return {x*v, y*v, z*v};       }
+    float operator*(const vec3& v) const { return x*v.x + y*v.y + z*v.z; }
+    vec3  operator+(const vec3& v) const { return {x+v.x, y+v.y, z+v.z}; }
+    vec3  operator-(const vec3& v) const { return {x-v.x, y-v.y, z-v.z}; }
+    vec3  operator-()              const { return {-x, -y, -z};          }
+    float norm() const { return std::sqrt(x*x+y*y+z*z); }
+    vec3 normalized() const { return (*this)*(1.f/norm()); }
+};
+
+vec3 cross(const vec3 v1, const vec3 v2) {
+    return { v1.y*v2.z - v1.z*v2.y, v1.z*v2.x - v1.x*v2.z, v1.x*v2.y - v1.y*v2.x };
+}
 
 struct Light {
     vec3 position;
@@ -11,7 +29,7 @@ struct Light {
 
 struct Material {
     float refractive_index = 1;
-    vec4 albedo = {1,0,0,0};
+    float albedo[4] = {1,0,0,0};
     vec3 diffuse_color = {0,0,0};
     float specular_exponent = 0;
 };
@@ -72,7 +90,7 @@ bool scene_intersect(const vec3 &orig, const vec3 &dir, vec3 &hit, vec3 &N, Mate
         if (ray_sphere_intersect(orig, dir, s, dist_i) && dist_i < spheres_dist) {
             spheres_dist = dist_i;
             hit = orig + dir*dist_i;
-            N = (hit - s.center).normalize();
+            N = (hit - s.center).normalized();
             material = s.material;
         }
     }
@@ -98,14 +116,14 @@ vec3 cast_ray(const vec3 &orig, const vec3 &dir, size_t depth=0) {
     if (depth>4 || !scene_intersect(orig, dir, point, N, material))
         return vec3{0.2, 0.7, 0.8}; // background color
 
-    vec3 reflect_dir = reflect(dir, N).normalize();
-    vec3 refract_dir = refract(dir, N, material.refractive_index).normalize();
+    vec3 reflect_dir = reflect(dir, N).normalized();
+    vec3 refract_dir = refract(dir, N, material.refractive_index).normalized();
     vec3 reflect_color = cast_ray(point, reflect_dir, depth + 1);
     vec3 refract_color = cast_ray(point, refract_dir, depth + 1);
 
     float diffuse_light_intensity = 0, specular_light_intensity = 0;
     for (const Light light : lights) {
-        vec3 light_dir = (light.position - point).normalize();
+        vec3 light_dir = (light.position - point).normalized();
 
         vec3 shadow_pt, trashnrm;
         Material trashmat;
@@ -130,7 +148,7 @@ int main() {
             float dir_x =  (i + 0.5) -  width/2.;
             float dir_y = -(j + 0.5) + height/2.;    // this flips the image at the same time
             float dir_z = -height/(2.*tan(fov/2.));
-            framebuffer[i+j*width] = cast_ray(vec3{0,0,0}, vec3{dir_x, dir_y, dir_z}.normalize());
+            framebuffer[i+j*width] = cast_ray(vec3{0,0,0}, vec3{dir_x, dir_y, dir_z}.normalized());
         }
     }
 
