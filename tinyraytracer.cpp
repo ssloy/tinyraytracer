@@ -1,4 +1,5 @@
 #include <limits>
+#include <tuple>
 #include <fstream>
 #include <vector>
 #include <algorithm>
@@ -58,17 +59,16 @@ static const std::vector<Light> lights = {
     {{ 30, 20,  30}, 1.7}
 };
 
-bool ray_sphere_intersect(const vec3 &orig, const vec3 &dir, const Sphere &s, float &t0) {
+std::tuple<bool,float> ray_sphere_intersect(const vec3 &orig, const vec3 &dir, const Sphere &s) { // ret value is a pair [intersection found, distance]
     vec3 L = s.center - orig;
     float tca = L*dir;
     float d2 = L*L - tca*tca;
-    if (d2 > s.radius*s.radius) return false;
+    if (d2 > s.radius*s.radius) return {false, 0.f};
     float thc = std::sqrt(s.radius*s.radius - d2);
-    t0       = tca - thc;
-    float t1 = tca + thc;
-    if (t0 < 1e-3) t0 = t1;  // offset the original point to avoid occlusion by the object itself
-    if (t0 < 1e-3) return false;
-    return true;
+    float t0 = tca-thc, t1 = tca+thc;
+    if (t0>1e-3) return {true, t0};  // offset the original point by 1e-3 to avoid occlusion by the object itself
+    if (t1>1e-3) return {true, t1};
+    return {false, 0.f};
 }
 
 vec3 reflect(const vec3 &I, const vec3 &N) {
@@ -83,13 +83,12 @@ vec3 refract(const vec3 &I, const vec3 &N, const float eta_t, const float eta_i=
     return k<0 ? vec3{1,0,0} : I*eta + N*(eta*cosi - std::sqrt(k)); // k<0 = total reflection, no ray to refract. I refract it anyways, this has no physical meaning
 }
 
-bool scene_intersect(const vec3 &orig, const vec3 &dir, vec3 &hit, vec3 &N, Material &material) {
+bool scene_intersect(const vec3 &orig, const vec3 &dir, vec3 &hit, vec3 &N, Material &material) { // TODO: move output values to a return tuple
     float spheres_dist = std::numeric_limits<float>::max();
     for (const Sphere &s : spheres) {
-        float dist_i;
-        if (ray_sphere_intersect(orig, dir, s, dist_i) && dist_i < spheres_dist) {
-            spheres_dist = dist_i;
-            hit = orig + dir*dist_i;
+        if (auto [intersection, dist] = ray_sphere_intersect(orig, dir, s); intersection && dist < spheres_dist) {
+            spheres_dist = dist;
+            hit = orig + dir*dist;
             N = (hit - s.center).normalized();
             material = s.material;
         }
