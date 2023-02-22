@@ -11,10 +11,8 @@ In my lectures I tend to avoid third party libraries as long as it is reasonable
 ```sh
 git clone https://github.com/ssloy/tinyraytracer.git
 cd tinyraytracer
-mkdir build
-cd build
-cmake ..
-make
+cmake -B build
+cmake --build build
 ```
 
 You can open the project in Gitpod, a free online dev evironment for GitHub:

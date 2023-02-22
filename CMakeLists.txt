@@ -1,20 +1,22 @@
-cmake_minimum_required (VERSION 2.8)
-project(tinyraytracer)
+cmake_minimum_required (VERSION 3.10...3.26)
+
+get_property(is_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+if(NOT is_multi_config AND NOT (CMAKE_BUILD_TYPE OR DEFINED ENV{CMAKE_BUILD_TYPE}))
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Release default")
+endif()
+
+project(tinyraytracer LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(OpenMP)
-if(OPENMP_FOUND)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU|Intel")
+  add_compile_options(-Wall)
 endif()
 
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
-endif()
+find_package(OpenMP COMPONENTS CXX)
 
-file(GLOB SOURCES *.h *.cpp)
-add_executable(${PROJECT_NAME} ${SOURCES})
+add_executable(${PROJECT_NAME} tinyraytracer.cpp)
+target_link_libraries(${PROJECT_NAME} PRIVATE $<$<BOOL:${OpenMP_CXX_FOUND}>:OpenMP::OpenMP_CXX>)
 
+file(GENERATE OUTPUT .gitignore CONTENT "*")
