@@ -2,11 +2,8 @@ image:
   file: Dockerfile
 tasks:
 - command: >
-    mkdir --parents build &&
-    cd build &&
-    cmake .. &&
-    make &&
-    ./tinyraytracer &&
+    cmake -Bbuild &&
+    cmake --build build &&
+    build/tinyraytracer &&
     pnmtopng out.ppm > out.png &&
-    open out.png &&
-    cd ..
+    open out.png
