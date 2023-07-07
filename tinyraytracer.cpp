@@ -34,10 +34,10 @@ struct Sphere {
     Material material;
 };
 
-constexpr Material      ivory = {1.0, {0.9,  0.5, 0.1, 0.0}, {0.4, 0.4, 0.3},   50.};
-constexpr Material      glass = {1.5, {0.0,  0.9, 0.1, 0.8}, {0.6, 0.7, 0.8},  125.};
-constexpr Material red_rubber = {1.0, {1.4,  0.3, 0.0, 0.0}, {0.3, 0.1, 0.1},   10.};
-constexpr Material     mirror = {1.0, {0.0, 16.0, 0.8, 0.0}, {1.0, 1.0, 1.0}, 1425.};
+constexpr Material      ivory = {0.0, {0.9, 0.5, 0.1, 0.0}, {0.4, 0.4, 0.3},   50.0};
+constexpr Material      glass = {1.0, {0.1, 0.8, 0.2, 0.8}, {0.0, 0.0, 0.0},  125.0};
+constexpr Material red_rubber = {0.0, {1.0, 0.3, 0.0, 0.0}, {0.3, 0.1, 0.1},   10.0};
+constexpr Material     mirror = {0.0, {0.1, 0.9, 0.8, 0.0}, {0.5, 0.5, 0.5}, 1425.0};
 
 constexpr Sphere spheres[] = {
     {{-3,    0,   -16}, 2,      ivory},
